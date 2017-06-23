@@ -99,10 +99,6 @@ function v2View (bunsenView) {
 
 export default Component.extend(SpreadMixin, HookMixin, PropTypeMixin, {
   // == Component Properties ===================================================
-<<<<<<< HEAD
-=======
-
->>>>>>> 40789af5fce0742c225ea094fdca4a24cd0187e7
   classNames: ['frost-bunsen-detail'],
   layout,
 
