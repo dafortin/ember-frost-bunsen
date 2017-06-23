@@ -18,31 +18,10 @@
   }}
 {{/if}}
 <div class='frost-bunsen-item-input'>
-  {{#if itemCell.renderer}}
-    {{component customRenderer
-      bunsenId=(concat bunsenId '.' index)
-      bunsenModel=bunsenModel.items
-      bunsenView=bunsenView
-      cellConfig=cellConfig
-      formDisabled=formDisabled
-      hook=hook
-      label=label
-      onChange=onChange
-      onError=onError
-      readOnly=readOnly
-      registerForFormValueChanges=registerForFormValueChanges
-      registerValidator=registerValidator
-      renderers=renderers
-      showAllErrors=showAllErrors
-      triggerValidation=triggerValidation
-      unregisterForFormValueChanges=unregisterForFormValueChanges
-      value=value
-      valueChangeSet=valueChangeSet
-    }}
-  {{else if (eq bunsenModel.items.type 'array')}}
+  {{#if (eq renderModel.type 'array')}}
     {{frost-bunsen-array-container
-      bunsenId=(concat bunsenId '.' index)
-      bunsenModel=bunsenModel.items
+      bunsenId=renderId
+      bunsenModel=renderModel
       bunsenView=bunsenView
       cellConfig=cellConfig
       errors=errors
@@ -61,15 +40,21 @@
       value=value
       valueChangeSet=valueChangeSet
     }}
-  {{else if (eq bunsenModel.items.type 'object')}}
+  {{else if (eq renderModel.type 'object')}}
     {{frost-bunsen-cell
-      bunsenId=(concat bunsenId '.' index)
-      bunsenModel=bunsenModel.items
+      bunsenId=renderId
+      bunsenModel=renderModel
       bunsenView=bunsenView
-      cellConfig=itemCell
+      cellConfig=cellConfig
       errors=errors
       formDisabled=formDisabled
       hook=hook
+      isRequired=(frost-bunsen-is-required
+        bunsenModel=renderModel.items
+        cell=itemCell
+        cellDefinitions=bunsenView.cellDefinitions
+        value=value
+      )
       label=label
       onChange=onChange
       onError=onError
@@ -85,10 +70,10 @@
     }}
   {{else}}
     {{frost-bunsen-input-wrapper
-      bunsenId=(concat bunsenId '.' index)
-      bunsenModel=bunsenModel.items
+      bunsenId=renderId
+      bunsenModel=renderModel
       bunsenView=bunsenView
-      cellConfig=itemCell
+      cellConfig=cellConfig
       errorMessage=errorMessage
       formDisabled=formDisabled
       hook=hook

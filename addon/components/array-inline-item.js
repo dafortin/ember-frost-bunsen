@@ -1,5 +1,5 @@
 import {utils} from 'bunsen-core'
-const {getLabel} = utils
+const {getLabel, getSubModel} = utils
 import Ember from 'ember'
 const {Component, get, isEmpty, typeOf} = Ember
 import computed, {readOnly} from 'ember-computed-decorators'
@@ -49,20 +49,6 @@ export default Component.extend(HookMixin, PropTypeMixin, {
     }
   },
 
-  // == Computed Properties ====================================================
-
-  @readOnly
-  @computed('cellConfig', 'renderers')
-  /**
-   * Get name of component for custom renderer
-   * @param {Object} cellConfig - cell config
-   * @returns {String} name of custom renderer component
-   */
-  customRenderer (cellConfig) {
-    const renderer = get(cellConfig, 'arrayOptions.itemCell.renderer.name')
-    return this.get(`renderers.${renderer}`)
-  },
-
   @readOnly
   @computed('formDisabled', 'cellConfig')
   disabled (formDisabled, cellConfig) {
@@ -72,7 +58,7 @@ export default Component.extend(HookMixin, PropTypeMixin, {
   @readOnly
   @computed('errors')
   errorMessage (errors) {
-    const bunsenId = `${this.get('bunsenId')}.${this.get('index')}`
+    const bunsenId = this.get('bunsenId')
 
     if (typeOf(errors) !== 'object' || isEmpty(errors[bunsenId])) {
       return null
@@ -82,9 +68,9 @@ export default Component.extend(HookMixin, PropTypeMixin, {
   },
 
   @readOnly
-  @computed('value')
-  renderValue (value) {
-    const bunsenId = `${this.get('bunsenId')}.${this.get('index')}`
+  @computed('value', 'cellConfig.model')
+  renderValue (value, model) {
+    const bunsenId = this.get('bunsenId')
 
     if (typeOf(value) !== 'object') {
       return undefined
@@ -113,9 +99,30 @@ export default Component.extend(HookMixin, PropTypeMixin, {
   },
 
   @readOnly
-  @computed('cellConfig')
-  itemCell (cellConfig) {
-    return get(cellConfig, 'arrayOptions.itemCell') || {}
+  @computed('cellConfig', 'index')
+  itemCell (cellConfig, index) {
+    return get(cellConfig, `arrayOptions.tupleCells.${index}`) ||
+      get(cellConfig, `arrayOptions.itemCell.${index}`) ||
+      get(cellConfig, 'arrayOptions.itemCell') || {}
+  },
+
+  @readOnly
+  @computed('cellConfig', 'bunsenModel')
+  renderModel (cellConfig, bunsenModel) {
+    if (typeof cellConfig.model === 'string') {
+      return getSubModel(bunsenModel, cellConfig.model)
+    }
+
+    return bunsenModel
+  },
+
+  @readOnly
+  @computed('bunsenId', 'cellConfig.model')
+  renderId (bunsenId, model) {
+    if (typeof model === 'string') {
+      return `${bunsenId}.${model}`
+    }
+    return bunsenId
   },
 
   // == Actions ================================================================

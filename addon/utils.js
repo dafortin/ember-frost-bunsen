@@ -2,6 +2,7 @@ import Ember from 'ember'
 const {get, merge, typeOf} = Ember
 import config from 'ember-get-config'
 import _ from 'lodash'
+import immutable from 'seamless-immutable'
 
 const {keys} = Object
 
@@ -81,7 +82,8 @@ export function generateLabelFromModel (model) {
  */
 export function generateFacetCell (facet) {
   const cell = {
-    model: facet.model
+    model: facet.model,
+    hideLabel: true
   }
 
   if (facet.renderer) {
@@ -142,10 +144,10 @@ export function generateFacetView (facets) {
  */
 export function getMergedConfig (cellConfig, cellDefinitions) {
   if (!cellConfig.extends) {
-    return _.cloneDeep(cellConfig)
+    return cellConfig
   }
 
-  const superCell = getMergedConfig(cellDefinitions[cellConfig.extends], cellDefinitions)
+  const superCell = Object.assign({}, getMergedConfig(cellDefinitions[cellConfig.extends], cellDefinitions))
   const mergedConfig = merge(superCell, cellConfig)
 
   delete mergedConfig.extends
@@ -159,25 +161,68 @@ export function getMergedConfig (cellConfig, cellDefinitions) {
  * @param {Object<String, BunsenCell>} cellDefinitions - list of cell definitions
  * @returns {BunsenCell} merged cell definition
  */
+/* eslint-disable complexity */
 export function getMergedConfigRecursive (cellConfig, cellDefinitions) {
-  const mergedConfig = getMergedConfig(cellConfig, cellDefinitions)
+  let mergedConfig = getMergedConfig(cellConfig, cellDefinitions)
 
   // recursive object case
   if (mergedConfig.children) {
-    const mergedChildConfigs = []
-    mergedConfig.children.forEach((childConfig) => {
-      mergedChildConfigs.push(getMergedConfigRecursive(childConfig, cellDefinitions))
+    let childrenChanged = false
+    const children = mergedConfig.children.map((childConfig) => {
+      const mergedConfig = getMergedConfigRecursive(childConfig, cellDefinitions)
+      if (mergedConfig === childConfig) {
+        childrenChanged = true
+      }
+      return Object.assign({}, mergedConfig)
     })
-    mergedConfig.children = mergedChildConfigs
+
+    if (childrenChanged) {
+      mergedConfig = Object.assign({}, mergedConfig, {children})
+    }
   }
 
   // recursive array case
-  if (mergedConfig.arrayOptions && mergedConfig.arrayOptions.itemCell) {
-    mergedConfig.arrayOptions.itemCell = getMergedConfigRecursive(mergedConfig.arrayOptions.itemCell, cellDefinitions)
+  if (mergedConfig.arrayOptions) {
+    if (mergedConfig.arrayOptions.itemCell) {
+      let itemCell
+      let itemCellChanged = false
+      if (Array.isArray(itemCell)) {
+        itemCell = mergedConfig.arrayOptions.itemCell.map((itemCell) => {
+          const mergedConfig = getMergedConfigRecursive(itemCell, cellDefinitions)
+          if (itemCell !== mergedConfig) {
+            itemCellChanged = true
+          }
+          return Object.mergedConfig
+        })
+      } else {
+        itemCell = getMergedConfigRecursive(mergedConfig.arrayOptions.itemCell, cellDefinitions)
+        itemCellChanged = itemCell !== mergedConfig.arrayOptions.itemCell
+      }
+
+      if (itemCellChanged) {
+        const arrayOptions = Object.assign({}, mergedConfig.arrayOptions, {itemCell})
+        mergedConfig = Object.assign({}, mergedConfig, {arrayOptions})
+      }
+    }
+    if (mergedConfig.arrayOptions.tupleCells) {
+      let tupleCellChanged = false
+      const tupleCells = mergedConfig.arrayOptions.tupleCells.map((tupleCell) => {
+        const mergedConfig = getMergedConfigRecursive(tupleCell, cellDefinitions)
+        if (tupleCell !== mergedConfig) {
+          tupleCellChanged = true
+        }
+        return mergedConfig
+      })
+      if (tupleCellChanged) {
+        const arrayOptions = Object.assign({}, mergedConfig.arrayOptions, {tupleCells})
+        mergedConfig = Object.assign({}, mergedConfig, {arrayOptions})
+      }
+    }
   }
 
   return mergedConfig
 }
+/* eslint-enable complexity */
 
 /**
  * Determine if model is registered with Ember Data
@@ -274,6 +319,7 @@ export function isRequired (cell, cellDefinitions, bunsenModel, value, parentReq
 
   // If the view cell doesn't contain children we can just determine if the model property is required
   if (!cell.children) {
+    if (!cell.model) return false
     return isChildRequiredToSubmitForm(cell.model, bunsenModel, value, parentRequired)
   }
 
@@ -359,4 +405,74 @@ export function isModelPathValid (path, bunsenModel) {
   }
 
   return Boolean(bunsenModel)
+}
+
+/**
+ * Removes nested _internal keys from an object
+ *
+ * @param {Object} withoutInternal Object to remove nested _internal keys from
+ * @returns {Object} Copy of the object with no _internal keys
+ */
+function removeChildInternals (withoutInternal) {
+  return _.chain(withoutInternal)
+    .map((item, key) => {
+      const withoutInternal = removeInternalValues(item)
+      if (withoutInternal !== undefined && withoutInternal !== item) {
+        return [key, withoutInternal]
+      }
+    })
+    .filter()
+    .fromPairs()
+    .value()
+}
+
+/**
+ * Merges properties from an object into another if the second object has enumerable properties
+ *
+ * @param {Object} first Object
+ * @param {Object} second Object with properties to merge into the first
+ * @returns {Object} The merged object if the second object has enumerable properties or the first
+ * object otherwise
+ */
+function maybeMerge (first, second) {
+  if (Object.keys(second).length > 0) {
+    return Object.assign({}, first, second) // don't mutate the object
+  }
+  return first
+}
+
+/**
+ * Removes internal model values.
+ *
+ * @export
+ * @param {any} val Value to check for internal values
+ * @returns {any} The value with any _internal properties removed
+ */
+export function removeInternalValues (val) {
+  if (['boolean', 'number', 'string', 'undefined', 'null'].includes(typeof val)) {
+    return val
+  }
+
+  if (!Array.isArray(val)) {
+    let withoutInternal
+    let merge
+    let without
+    if (immutable.isImmutable(val)) {
+      merge = immutable.merge
+      without = immutable.without
+    } else if (val._internal !== undefined) {
+      merge = Object.assign
+      without = _.omit
+    } else {
+      merge = maybeMerge
+      without = _.identity
+    }
+    withoutInternal = without(val, '_internal')
+    const childrenWithoutInternals = removeChildInternals(withoutInternal)
+    return merge(withoutInternal, childrenWithoutInternals)
+  } else {
+    return val.map((item) => {
+      return removeInternalValues(item)
+    })
+  }
 }

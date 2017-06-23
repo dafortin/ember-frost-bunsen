@@ -1,4 +1,5 @@
 import {expect} from 'chai'
+import wait from 'ember-test-helpers/wait'
 import {beforeEach, describe, it} from 'mocha'
 
 import {
@@ -7,7 +8,7 @@ import {
 
 import {setupFormComponentTest} from 'dummy/tests/helpers/utils'
 
-describe('Integration: Component / frost-bunsen-form / cell required label', function () {
+describe('Integration: Component / frost-bunsen-form / condition', function () {
   setupFormComponentTest({
     bunsenModel: {
       properties: {
@@ -71,6 +72,8 @@ describe('Integration: Component / frost-bunsen-form / cell required label', fun
         },
         value: {}
       })
+
+      return wait()
     })
 
     describe('when the condition is met', function () {
@@ -78,6 +81,8 @@ describe('Integration: Component / frost-bunsen-form / cell required label', fun
         this.set('value', {
           qux: 'hello'
         })
+
+        return wait()
       })
 
       it('renders as expected', function () {
@@ -94,6 +99,8 @@ describe('Integration: Component / frost-bunsen-form / cell required label', fun
         this.set('value', {
           qux: 'hell'
         })
+
+        return wait()
       })
 
       it('renders as expected', function () {
@@ -102,6 +109,10 @@ describe('Integration: Component / frost-bunsen-form / cell required label', fun
           'does not render any text input'
         )
           .to.have.length(0)
+      })
+
+      it('has no validation errors', function () {
+        expect(this.$('.frost-bunsen-validation-result')).to.have.length(0)
       })
     })
   })
@@ -152,6 +163,8 @@ describe('Integration: Component / frost-bunsen-form / cell required label', fun
         },
         value: {}
       })
+
+      return wait()
     })
 
     describe('when the condition is met', function () {
@@ -159,6 +172,8 @@ describe('Integration: Component / frost-bunsen-form / cell required label', fun
         this.set('value', {
           qux: 'hello'
         })
+
+        return wait()
       })
 
       it('renders as expected', function () {
@@ -175,6 +190,8 @@ describe('Integration: Component / frost-bunsen-form / cell required label', fun
         this.set('value', {
           qux: 'hell'
         })
+
+        return wait()
       })
 
       it('renders as expected', function () {
@@ -183,6 +200,10 @@ describe('Integration: Component / frost-bunsen-form / cell required label', fun
           'does not render any text input'
         )
           .to.have.length(0)
+      })
+
+      it('has no validation errors', function () {
+        expect(this.$('.frost-bunsen-validation-result')).to.have.length(0)
       })
     })
   })

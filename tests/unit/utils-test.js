@@ -1,5 +1,5 @@
 import {expect} from 'chai'
-import {beforeEach, describe, it} from 'mocha'
+import {afterEach, beforeEach, describe, it} from 'mocha'
 
 import {
   generateFacetCell,
@@ -7,7 +7,8 @@ import {
   generateLabelFromModel,
   isModelPathValid,
   isRegisteredEmberDataModel,
-  isRequired
+  isRequired,
+  removeInternalValues
 } from 'ember-frost-bunsen/utils'
 
 describe('bunsen-utils', function () {
@@ -16,6 +17,10 @@ describe('bunsen-utils', function () {
 
     beforeEach(function () {
       facet = {model: 'foo'}
+    })
+
+    afterEach(function () {
+      facet = null
     })
 
     describe('when renderer defined', function () {
@@ -34,6 +39,7 @@ describe('bunsen-utils', function () {
             children: [
               {
                 model: 'foo',
+                hideLabel: true,
                 renderer: {
                   name: 'multi-select'
                 }
@@ -53,6 +59,7 @@ describe('bunsen-utils', function () {
             children: [
               {
                 model: 'foo',
+                hideLabel: true,
                 renderer: {
                   name: 'multi-select'
                 }
@@ -77,7 +84,8 @@ describe('bunsen-utils', function () {
           expect(actual).to.eql({
             children: [
               {
-                model: 'foo'
+                model: 'foo',
+                hideLabel: true
               }
             ],
             clearable: true,
@@ -93,7 +101,8 @@ describe('bunsen-utils', function () {
           expect(actual).to.eql({
             children: [
               {
-                model: 'foo'
+                model: 'foo',
+                hideLabel: true
               }
             ],
             clearable: true,
@@ -150,6 +159,10 @@ describe('bunsen-utils', function () {
       ]
     })
 
+    afterEach(function () {
+      facets = null
+    })
+
     it('returns expected bunsen view', function () {
       const actual = generateFacetView(facets)
       expect(actual).to.eql({
@@ -159,7 +172,8 @@ describe('bunsen-utils', function () {
               {
                 children: [
                   {
-                    model: 'foo'
+                    model: 'foo',
+                    hideLabel: true
                   }
                 ],
                 clearable: true,
@@ -169,7 +183,8 @@ describe('bunsen-utils', function () {
               {
                 children: [
                   {
-                    model: 'bar'
+                    model: 'bar',
+                    hideLabel: true
                   }
                 ],
                 clearable: true,
@@ -180,6 +195,7 @@ describe('bunsen-utils', function () {
                 children: [
                   {
                     model: 'foo.bar.baz',
+                    hideLabel: true,
                     renderer: {
                       name: 'multi-select'
                     }
@@ -193,6 +209,7 @@ describe('bunsen-utils', function () {
                 children: [
                   {
                     model: 'alpha',
+                    hideLabel: true,
                     renderer: {
                       name: 'checkbox-array'
                     }
@@ -206,6 +223,7 @@ describe('bunsen-utils', function () {
                 children: [
                   {
                     model: 'bravo',
+                    hideLabel: true,
                     renderer: {
                       name: 'geolocation'
                     }
@@ -219,6 +237,7 @@ describe('bunsen-utils', function () {
                 children: [
                   {
                     model: 'charlie',
+                    hideLabel: true,
                     renderer: {
                       name: 'json'
                     }
@@ -232,6 +251,7 @@ describe('bunsen-utils', function () {
                 children: [
                   {
                     model: 'delta',
+                    hideLabel: true,
                     renderer: {
                       name: 'textarea'
                     }
@@ -322,6 +342,10 @@ describe('bunsen-utils', function () {
       }
     })
 
+    afterEach(function () {
+      bunsenModel = null
+    })
+
     describe('when children not present in view cell', function () {
       it('returns true when model is required root leaf property', function () {
         const cell = {model: 'alpha'}
@@ -403,6 +427,7 @@ describe('bunsen-utils', function () {
 
   describe('isModelPathValid', function () {
     let bunsenModel
+
     beforeEach(function () {
       bunsenModel = {
         properties: {
@@ -417,6 +442,10 @@ describe('bunsen-utils', function () {
       }
     })
 
+    afterEach(function () {
+      bunsenModel = null
+    })
+
     it('returns false when the path is invalid', function () {
       expect(isModelPathValid('baz', bunsenModel)).to.equal(false)
       expect(isModelPathValid('foo.baz', bunsenModel)).to.equal(false)
@@ -425,6 +454,98 @@ describe('bunsen-utils', function () {
     it('returns true when the path is valid', function () {
       expect(isModelPathValid('foo', bunsenModel)).to.equal(true)
       expect(isModelPathValid('foo.bar', bunsenModel)).to.equal(true)
+    })
+  })
+
+  describe('removeInternalValues', function () {
+    it('returns an equal object when there are no internal values', function () {
+      const value = {
+        foo: {
+          bar: {
+            baz: {},
+            quux: {}
+          }
+        }
+      }
+      const withoutInternals = removeInternalValues(value)
+      expect(withoutInternals).to.eql({
+        foo: {
+          bar: {
+            baz: {},
+            quux: {}
+          }
+        }
+      })
+    })
+    it('finds and removes internal values at the top level', function () {
+      const value = {
+        foo: {
+          bar: {
+            baz: {},
+            quux: {}
+          }
+        },
+        _internal: {
+          bar: {
+            baz: {},
+            quux: {}
+          }
+        }
+      }
+      const internals = removeInternalValues(value)
+      expect(internals).to.eql({
+        foo: {
+          bar: {
+            baz: {},
+            quux: {}
+          }
+        }
+      })
+    })
+    it('finds and removes internal values at the deeper levels', function () {
+      const value = {
+        foo: {
+          bar: {
+            baz: {
+              _internal: {
+                bar: {
+                  baz: {},
+                  quux: {}
+                }
+              }
+            },
+            quux: {
+              _internal: {
+                bar: {
+                  baz: {},
+                  quux: {}
+                }
+              }
+            },
+            _internal: {
+              bar: {
+                baz: {},
+                quux: {}
+              }
+            }
+          },
+          _internal: {
+            bar: {
+              baz: {},
+              quux: {}
+            }
+          }
+        }
+      }
+      const internals = removeInternalValues(value)
+      expect(internals).to.eql({
+        foo: {
+          bar: {
+            baz: {},
+            quux: {}
+          }
+        }
+      })
     })
   })
 })

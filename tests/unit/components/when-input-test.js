@@ -37,6 +37,12 @@ describe('Unit: frost-bunsen-input-when', function () {
 
   afterEach(function () {
     sandbox.restore()
+    component = null
+    sandbox = null
+
+    Object.keys(ctx).forEach((key) => {
+      delete ctx[key]
+    })
   })
 
   it('size defaults to "small"', function () {
@@ -97,7 +103,7 @@ describe('Unit: frost-bunsen-input-when', function () {
     beforeEach(function () {
       onChangeSpy = sandbox.spy()
       component.set('onChange', onChangeSpy)
-      component.send('selectDate', moment('2017-02-25 06Z'))
+      component.send('selectDate', moment('2017-02-25'))
     })
 
     it('sets "storedDateTimeValue" for the second radio button', function () {

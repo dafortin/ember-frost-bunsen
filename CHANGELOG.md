@@ -1,6 +1,263 @@
-# 14.23.4 (2017-06-16)
+# 14.32.10 (2017-06-22)
+**Fixed** removal of `_internal` properties for `onChange` handler.
+**Updated** bunsen-core to fix validation for deep internal properties
 
-* **Fixes** the merge build.
+
+# 14.32.9 (2017-06-21)
+
+* **Fixed** an issue where view schema would have validation errors if it referenced a field that did not have its condition met.
+
+
+# 14.32.8 (2017-06-21)
+
+* **Fixes** a bug in the select renderer not displaying a label when the model enum has 0
+
+
+# 14.32.7 (2017-06-21)
+
+* **Updated** to use [bunsen-core@0.30.13](https://github.com/ciena-blueplanet/bunsen-core/pull/112)
+* **Fixed** the evc example
+
+
+# 14.32.6 (2017-06-20)
+**Fixed** issue where tabs would jump to back to the first tab when an array is added to.
+
+
+# 14.32.5 (2017-06-19)
+
+* **Fixed** a bug with the queryForCurrentValue select option which assumed the id was at the top level of the form's value.
+* **Fixed** `components/form.js` to allow extension of `classNames` rather than hard-setting it to only one class name.
+
+
+# 14.32.4 (2017-06-19)
+**Fixed** custom renderers in arrays as part of the `itemCell` configuration. 
+
+
+# 14.32.3 (2017-06-17)
+**Fixed** how BunsenModelPath handles appending string paths using dot notation. This was causing internal models to be added to the wrong spot in the bunsen model if the cell defining the internal model used dot notation.
+
+
+# 14.32.2 (2017-06-14)
+**Changed** model expansions and internal models to take effect in nested objects.
+**Added** support for internal models within arrays.
+
+
+
+# 14.32.1 (2017-06-09)
+- added a fix to arrays per @agonza40 and updated tests to ensure the values are actually shown
+
+
+# 14.32.0 (2017-06-06)
+* **Added** validateOnVisibilityChange property to allow disabling of form validation after losing/regaining focus of the page
+* **Fixed** select documentation formatting
+
+
+# 14.31.5 (2017-06-06)
+
+* **Fixed** support for list data overrides in the select renderer
+
+
+# 14.31.4 (2017-06-04)
+**Fixed** relative path resolution
+
+# 14.31.3 (2017-06-03)
+- **Fixed** issue where when you select an item in the `multi-select` dropdown then filter it only filters locally.
+
+
+# 14.31.2 (2017-06-02)
+
+* **Fixes** issue with `select-input` failing validation when spread options are provided.
+
+
+# 14.31.1 (2017-05-31)
+**Fixed** references to internal models in deeply nested cells.
+
+# 14.31.0 (2017-05-31)
+**Added** support for relative paths for the recordsPath select renderer option
+**Fixed** bunsenId, bunsenModel, and config assignment to cells from the inline array item component. 
+
+
+# 14.30.5 (2017-05-25)
+* **Fixed** specifying `options` in the bunsen view for a `multi-select` renderer. The `options` were not making it all the way to the `frost-multi-select` component. 
+* **Fixed** API filtering for multi-select. Previously, it was only using local filtering.
+
+
+# 14.30.4 (2017-05-24)
+**Fixed** how view cells are merged.
+
+# 14.30.3 (2017-05-23)
+* **Stop** importing `getOwner` from `ember-getowner-polyfill`, since it's a proper polyfill now. (Fixes [#415](https://github.com/ciena-frost/ember-frost-bunsen/issues/415))
+
+
+# 14.30.2 (2017-05-23)
+**Fixed** cell definition re-use. In certain situations cell definitions were being used directly instead of being copied which caused issues when trying to assign an ID to the result cell. Now cell definitions are copied instead of being used directly.
+
+
+# 14.30.1 (2017-05-16)
+**Update** core version to revert view generation.
+
+
+# 14.30.0 (2017-05-12)
+
+* **Added** support for array conditions in both models and views.
+
+* **Added** view model extension support. This means you can do something like the following:
+
+  *Model*
+
+  ```json
+  {
+    "properties": {
+      "lang": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  }
+  ```
+
+  *View*
+  ```json
+  {
+    "cells": [
+      {
+        "children": [
+          {
+            "id": "langGroup",
+            "model": {
+              "enum": [
+                "Server",
+                "Web"
+              ],
+              "type": "string"
+            },
+            "internal": true
+          },
+          {
+            "conditions": [
+              {
+                "if": [
+                  {
+                    "_internal.langGroup": {"equals": "Web"}
+                  }
+                ]
+              }
+            ],
+            "model": "lang",
+            "renderer": {
+              "data": [
+                {"label": "CSS", "value": "css"},
+                {"label": "HTML", "value": "html"},
+                {"label": "JavaScript", "value": "js"}
+              ],
+              "name": "select"
+            }
+          },
+          {
+            "conditions": [
+              {
+                "if": [
+                  {
+                    "_internal.langGroup": {"equals": "Server"}
+                  }
+                ]
+              }
+            ],
+            "model": "lang",
+            "renderer": {
+              "data": [
+                {"label": "Express", "value": "express"},
+                {"label": "Python", "value": "py"},
+                {"label": "Ruby", "value": "rb"}
+              ],
+              "name": "select"
+            }
+          }
+        ]
+      }
+    ],
+    "type": "form",
+    "version": "2.0"
+  }
+  ```
+
+
+# 14.29.2 (2017-05-11)
+
+* **Added** some very basic introduction and model documentation.
+* **Fixed** a bug when working with a view in v1 schema.
+
+# 14.29.1 (2017-05-10)
+
+* **Cleaned** up code to run validation in same run loop as setting properties for optimize components a bit more.
+* **Fixed** section component to properly apply class for expand/collapse icon.
+* **Fixed** tests to clear out variables defined in `describe` blocks to prevent memory leaks.
+
+
+# 14.29.0 (2017-05-10)
+
+* **Added** support for new `_internal` model property which can contain any properties you don't want to propagate back to the consumer via the `onChange` callback. These can be used to drive conditional views without polluting the form value with state.
+* **Fixed** `geolocation` renderer to make less set calls to tighten the Ember run loop around changes.
+* **Replaced** some `didReceiveAttrs()` hooks with computed properties since Ember has deprecated the use of the `attrs` argument in the `didReceiveAttrs()` life cycle hook.
+
+
+# 14.28.3 (2017-05-05)
+
+* **Cleaned** up code by breaking into smaller functions and adding some comments/JSDoc.
+
+
+# 14.28.2 (2017-05-04)
+
+* **Updated** ember-bunsen-core dependency to fix an issue with Files being stripped from values
+
+
+# 14.28.1 (2017-05-04)
+
+* **Updated** ember-bunsen-core dependency to 0.24.3, which fixes a bug that would strip Files from values.
+
+
+# 14.28.0 (2017-05-04)
+
+* **Added** missing `return wait()` call to more tests to make sure they are async safe.
+* **Replaced** some deep cloning with shallow cloning to reduce new object creation.
+
+
+# 14.27.2 (2017-05-03)
+
+* **Added** a missing destroyed checked.
+* **Fixed** tests to use the `wait` helper to help prevent tests failures due to timing issues.
+
+
+# 14.27.1 (2017-05-01)
+* **Fixed** a bug where generateFacetView was creating facets where each group had two labels.
+
+
+# 14.27.0 (2017-04-28)
+
+* **Changed** a bunch of internal code so the `frost-bunsen-cell` component gets the `bunsenModel` for it's `bunsenId` not the parent model. This is preliminary work work a future PR to support conditionals in arrays.
+
+# 14.26.1 (2017-04-27)
+
+* **Fixed** styling regression.
+
+# 14.26.0 (2017-04-24)
+* **Added** check in the blueprint to avoid installing packages already installed
+
+
+# 14.25.1 (2017-04-21)
+
+* **Fixed** bug where array label wasn't showing up when `arrayOptions` is not defined.
+
+
+# 14.25.0 (2017-04-20)
+
+* **Added** support for select renderer to be driven by an array of integers/numbers/strings when using `endpoint` or simply `recordsPath` to mine the form value.
+
+
+# 14.24.0 (2017-04-20)
+
+* **Added** support for mining select lists from the form value instead of an API endpoint.
+>>>>>>> 40789af5fce0742c225ea094fdca4a24cd0187e7
 
 
 # 14.23.2 (2017-04-07)
